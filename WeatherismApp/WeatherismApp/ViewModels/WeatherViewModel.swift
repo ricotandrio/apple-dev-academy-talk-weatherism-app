@@ -15,6 +15,7 @@ class WeatherViewModel: ObservableObject {
     @Published var currentLocation: GeocodingResult?
     @Published var isLoading = false
     @Published var errorMessage: String?
+    @Published var cityName = "London"
     
     // MARK: - Dependencies
     private let weatherService: WeatherServiceProtocol
@@ -35,6 +36,10 @@ class WeatherViewModel: ObservableObject {
         Task {
             await fetchWeather(for: trimmedCity)
         }
+    }
+    
+    func searchCurrentCity() {
+        searchWeather(for: cityName)
     }
     
     func refreshWeather() {
@@ -136,6 +141,21 @@ class WeatherViewModel: ObservableObject {
             return .clear
         }
         return weatherCondition(for: weatherCode)
+    }
+    
+    var weatherDisplayModel: WeatherDisplayModel? {
+        guard let weatherData = weatherData,
+              let location = currentLocation else {
+            return nil
+        }
+        
+        return WeatherDisplayModel.from(
+            weatherData: weatherData,
+            location: location,
+            weatherIconProvider: weatherIconName,
+            weatherDescriptionProvider: weatherDescription,
+            weatherConditionProvider: weatherCondition
+        )
     }
     
     // MARK: - Weather Condition Logic

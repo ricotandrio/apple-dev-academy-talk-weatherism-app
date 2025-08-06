@@ -37,6 +37,8 @@ final class WeatherViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.hasWeatherData)
         XCTAssertFalse(viewModel.hasError)
         XCTAssertEqual(viewModel.locationDisplayName, "Unknown")
+        XCTAssertEqual(viewModel.cityName, "London") // New test for cityName
+        XCTAssertNil(viewModel.weatherDisplayModel) // New test for display model
     }
     
     // MARK: - Search Weather Tests
@@ -112,6 +114,49 @@ final class WeatherViewModelTests: XCTestCase {
         XCTAssertEqual(mockService.fetchWeatherCallCount, 0)
     }
     
+    func testSearchCurrentCity() async {
+        // Given
+        mockService.setupSuccessResponse()
+        viewModel.cityName = "Paris"
+        
+        // When
+        let expectation = expectation(description: "Current city search completed")
+        viewModel.searchCurrentCity()
+        
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        expectation.fulfill()
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+        
+        // Then
+        XCTAssertEqual(mockService.lastSearchedCity, "Paris")
+        XCTAssertEqual(mockService.fetchWeatherCallCount, 1)
+        XCTAssertTrue(viewModel.hasWeatherData)
+    }
+    
+    func testSearchCurrentCityWithEmptyName() {
+        // Given
+        viewModel.cityName = ""
+        
+        // When
+        viewModel.searchCurrentCity()
+        
+        // Then
+        XCTAssertEqual(viewModel.errorMessage, "Please enter a city name")
+        XCTAssertEqual(mockService.fetchWeatherCallCount, 0)
+    }
+    
+    func testCityNameStateManagement() {
+        // Given
+        let newCityName = "Tokyo"
+        
+        // When
+        viewModel.cityName = newCityName
+        
+        // Then
+        XCTAssertEqual(viewModel.cityName, newCityName)
+    }
+    
     func testSearchWeatherTrimsWhitespace() async {
         // Given
         mockService.setupSuccessResponse()
@@ -128,6 +173,51 @@ final class WeatherViewModelTests: XCTestCase {
         
         // Then
         XCTAssertEqual(mockService.lastSearchedCity, "London")
+    }
+    
+    // MARK: - Search Current City Tests
+    func testSearchCurrentCity() async {
+        // Given
+        mockService.setupSuccessResponse()
+        viewModel.cityName = "Paris"
+        
+        // When
+        let expectation = expectation(description: "Current city search completed")
+        viewModel.searchCurrentCity()
+        
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        expectation.fulfill()
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+        
+        // Then
+        XCTAssertEqual(mockService.lastSearchedCity, "Paris")
+        XCTAssertEqual(mockService.fetchWeatherCallCount, 1)
+        XCTAssertTrue(viewModel.hasWeatherData)
+    }
+    
+    func testSearchCurrentCityWithEmptyName() {
+        // Given
+        viewModel.cityName = ""
+        
+        // When
+        viewModel.searchCurrentCity()
+        
+        // Then
+        XCTAssertEqual(viewModel.errorMessage, "Please enter a city name")
+        XCTAssertEqual(mockService.fetchWeatherCallCount, 0)
+    }
+    
+    func testCityNameStateManagement() {
+        // Given
+        let newCityName = "Tokyo"
+        
+        // When
+        viewModel.cityName = newCityName
+        
+        // Then
+        XCTAssertEqual(viewModel.cityName, newCityName)
+    }
     }
     
     // MARK: - Refresh Weather Tests
@@ -218,6 +308,53 @@ final class WeatherViewModelTests: XCTestCase {
         
         // Should now be rainy (weather code 61 from TestDataFactory.createRainyWeatherResponse)
         XCTAssertEqual(viewModel.currentWeatherCondition, .rainy)
+    }
+    
+    // MARK: - Weather Display Model Tests
+    func testWeatherDisplayModel() async {
+        // Initially should be nil
+        XCTAssertNil(viewModel.weatherDisplayModel)
+        
+        // Given
+        mockService.setupSuccessResponse()
+        
+        // When
+        let expectation = expectation(description: "Weather display model created")
+        viewModel.searchWeather(for: "London")
+        
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        expectation.fulfill()
+        
+        await fulfillment(of: [expectation], timeout: 1.0)
+        
+        // Then
+        XCTAssertNotNil(viewModel.weatherDisplayModel)
+        
+        let displayModel = viewModel.weatherDisplayModel!
+        XCTAssertEqual(displayModel.locationName, "London, United Kingdom")
+        XCTAssertEqual(displayModel.weatherIconName, "sun.max") // Weather code 0
+        XCTAssertEqual(displayModel.weatherDescription, "Clear sky")
+        XCTAssertEqual(displayModel.currentTemperature, "23°C") // 22.5 rounded
+        XCTAssertEqual(displayModel.feelsLikeTemperature, "Feels like 24°C")
+        XCTAssertEqual(displayModel.minTemperature, "18°C")
+        XCTAssertEqual(displayModel.maxTemperature, "25°C")
+        XCTAssertEqual(displayModel.humidity, "65%")
+        XCTAssertEqual(displayModel.windSpeed, "10.5 km/h")
+        XCTAssertEqual(displayModel.weatherCondition, .clear)
+    }
+    
+    func testWeatherDisplayModelWithoutData() {
+        // When no weather data
+        XCTAssertNil(viewModel.weatherDisplayModel)
+        
+        // When only weather data without location
+        viewModel.weatherData = TestDataFactory.createMockWeatherResponse()
+        XCTAssertNil(viewModel.weatherDisplayModel)
+        
+        // When only location without weather data
+        viewModel.weatherData = nil
+        viewModel.currentLocation = TestDataFactory.createMockGeocodingResult()
+        XCTAssertNil(viewModel.weatherDisplayModel)
     }
     
     // MARK: - Computed Properties Tests

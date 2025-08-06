@@ -10,7 +10,6 @@ import SwiftUI
 // MARK: - Content View
 struct ContentView: View {
     @StateObject private var viewModel = WeatherViewModel()
-    @State private var cityName = "London"
     
     var body: some View {
         NavigationView {
@@ -23,18 +22,18 @@ struct ContentView: View {
                 VStack(spacing: 20) {
                     // Search bar
                     HStack {
-                        TextField("Enter city name", text: $cityName)
+                        TextField("Enter city name", text: $viewModel.cityName)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .onSubmit {
-                                viewModel.searchWeather(for: cityName)
+                                viewModel.searchCurrentCity()
                             }
                             .submitLabel(.search)
                         
                         Button("Search") {
-                            viewModel.searchWeather(for: cityName)
+                            viewModel.searchCurrentCity()
                         }
                         .buttonStyle(.borderedProminent)
-                        .disabled(viewModel.isLoading || cityName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        .disabled(viewModel.isLoading || viewModel.cityName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                     .padding(.horizontal)
                     
@@ -51,8 +50,8 @@ struct ContentView: View {
                                 .multilineTextAlignment(.center)
                         }
                         .padding()
-                    } else if viewModel.hasWeatherData, let weather = viewModel.weatherData {
-                        WeatherView(weather: weather, viewModel: viewModel)
+                    } else if viewModel.hasWeatherData, let displayModel = viewModel.weatherDisplayModel {
+                        WeatherView(displayModel: displayModel)
                     } else {
                         VStack(spacing: 20) {
                             Image(systemName: "cloud.sun")
@@ -84,7 +83,7 @@ struct ContentView: View {
                 }
             }
             .onAppear {
-                viewModel.searchWeather(for: cityName)
+                viewModel.searchCurrentCity()
             }
         }
     }

@@ -9,8 +9,7 @@ import SwiftUI
 
 // MARK: - Weather View
 struct WeatherView: View {
-    let weather: WeatherResponse
-    let viewModel: WeatherViewModel
+    let displayModel: WeatherDisplayModel
     
     var body: some View {
         VStack(spacing: 20) {
@@ -18,29 +17,29 @@ struct WeatherView: View {
             HStack {
                 Image(systemName: "location")
                     .foregroundColor(.white)
-                Text(viewModel.locationDisplayName)
+                Text(displayModel.locationName)
                     .font(.title2)
                     .foregroundColor(.white)
             }
             
             // Weather icon and description
             VStack(spacing: 10) {
-                Image(systemName: viewModel.weatherIconName(for: weather.current.weatherCode))
+                Image(systemName: displayModel.weatherIconName)
                     .font(.system(size: 80))
                     .foregroundColor(.white)
                 
-                Text(viewModel.weatherDescription(for: weather.current.weatherCode))
+                Text(displayModel.weatherDescription)
                     .font(.title3)
                     .foregroundColor(.white)
             }
             
             // Temperature
             VStack(spacing: 5) {
-                Text("\(Int(weather.current.temperature2m))°C")
+                Text(displayModel.currentTemperature)
                     .font(.system(size: 72, weight: .thin))
                     .foregroundColor(.white)
                 
-                Text("Feels like \(Int(weather.current.apparentTemperature))°C")
+                Text(displayModel.feelsLikeTemperature)
                     .font(.title3)
                     .foregroundColor(.white.opacity(0.8))
             }
@@ -50,25 +49,25 @@ struct WeatherView: View {
                 WeatherDetailView(
                     icon: "thermometer.low",
                     title: "Min",
-                    value: "\(Int(weather.daily.temperature2mMin.first ?? 0))°C"
+                    value: displayModel.minTemperature
                 )
                 
                 WeatherDetailView(
                     icon: "thermometer.high",
                     title: "Max",
-                    value: "\(Int(weather.daily.temperature2mMax.first ?? 0))°C"
+                    value: displayModel.maxTemperature
                 )
                 
                 WeatherDetailView(
                     icon: "humidity",
                     title: "Humidity",
-                    value: "\(weather.current.relativeHumidity2m)%"
+                    value: displayModel.humidity
                 )
                 
                 WeatherDetailView(
                     icon: "wind",
                     title: "Wind",
-                    value: "\(String(format: "%.1f", weather.current.windSpeed10m)) km/h"
+                    value: displayModel.windSpeed
                 )
             }
             .padding()
@@ -105,85 +104,55 @@ struct WeatherDetailView: View {
 
 // MARK: - Preview
 #Preview("Sunny Weather") {
-    let sunnyWeather = WeatherResponse(
-        current: CurrentWeather(
-            time: "2024-01-01T12:00",
-            temperature2m: 22.5,
-            relativeHumidity2m: 65,
-            apparentTemperature: 24.0,
-            windSpeed10m: 10.5,
-            windDirection10m: 180.0,
-            weatherCode: 0 // Clear sky
-        ),
-        daily: DailyWeather(
-            time: ["2024-01-01"],
-            temperature2mMax: [25.0],
-            temperature2mMin: [18.0]
-        ),
-        hourly: HourlyWeather(
-            time: ["2024-01-01T12:00"],
-            temperature2m: [22.5]
-        )
+    let sunnyDisplayModel = WeatherDisplayModel(
+        locationName: "London, United Kingdom",
+        weatherIconName: "sun.max",
+        weatherDescription: "Clear sky",
+        currentTemperature: "23°C",
+        feelsLikeTemperature: "Feels like 24°C",
+        minTemperature: "18°C",
+        maxTemperature: "25°C",
+        humidity: "65%",
+        windSpeed: "10.5 km/h",
+        weatherCondition: .clear
     )
     
-    let sampleViewModel = WeatherViewModel()
-    
-    WeatherView(weather: sunnyWeather, viewModel: sampleViewModel)
+    WeatherView(displayModel: sunnyDisplayModel)
         .background(WeatherCondition.clear.backgroundGradient)
 }
 
 #Preview("Rainy Weather") {
-    let rainyWeather = WeatherResponse(
-        current: CurrentWeather(
-            time: "2024-01-01T12:00",
-            temperature2m: 15.0,
-            relativeHumidity2m: 85,
-            apparentTemperature: 13.0,
-            windSpeed10m: 15.0,
-            windDirection10m: 270.0,
-            weatherCode: 61 // Rain
-        ),
-        daily: DailyWeather(
-            time: ["2024-01-01"],
-            temperature2mMax: [18.0],
-            temperature2mMin: [12.0]
-        ),
-        hourly: HourlyWeather(
-            time: ["2024-01-01T12:00"],
-            temperature2m: [15.0]
-        )
+    let rainyDisplayModel = WeatherDisplayModel(
+        locationName: "London, United Kingdom",
+        weatherIconName: "cloud.rain",
+        weatherDescription: "Slight rain",
+        currentTemperature: "15°C",
+        feelsLikeTemperature: "Feels like 13°C",
+        minTemperature: "12°C",
+        maxTemperature: "18°C",
+        humidity: "85%",
+        windSpeed: "15.0 km/h",
+        weatherCondition: .rainy
     )
     
-    let sampleViewModel = WeatherViewModel()
-    
-    WeatherView(weather: rainyWeather, viewModel: sampleViewModel)
+    WeatherView(displayModel: rainyDisplayModel)
         .background(WeatherCondition.rainy.backgroundGradient)
 }
 
 #Preview("Snowy Weather") {
-    let snowyWeather = WeatherResponse(
-        current: CurrentWeather(
-            time: "2024-01-01T12:00",
-            temperature2m: -2.0,
-            relativeHumidity2m: 90,
-            apparentTemperature: -5.0,
-            windSpeed10m: 20.0,
-            windDirection10m: 90.0,
-            weatherCode: 71 // Snow
-        ),
-        daily: DailyWeather(
-            time: ["2024-01-01"],
-            temperature2mMax: [1.0],
-            temperature2mMin: [-5.0]
-        ),
-        hourly: HourlyWeather(
-            time: ["2024-01-01T12:00"],
-            temperature2m: [-2.0]
-        )
+    let snowyDisplayModel = WeatherDisplayModel(
+        locationName: "London, United Kingdom",
+        weatherIconName: "cloud.snow",
+        weatherDescription: "Slight snow fall",
+        currentTemperature: "-2°C",
+        feelsLikeTemperature: "Feels like -5°C",
+        minTemperature: "-5°C",
+        maxTemperature: "1°C",
+        humidity: "90%",
+        windSpeed: "20.0 km/h",
+        weatherCondition: .snowy
     )
     
-    let sampleViewModel = WeatherViewModel()
-    
-    WeatherView(weather: snowyWeather, viewModel: sampleViewModel)
+    WeatherView(displayModel: snowyDisplayModel)
         .background(WeatherCondition.snowy.backgroundGradient)
 }
